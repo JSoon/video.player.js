@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <title></title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <link rel="stylesheet" type="text/css" href="/css/video.player.css">
+</head>
+
+<body>
+
+    <div style="width: 1200px; margin: 0 auto;">
+        <!--mp4-->
+        <button type="button" id="J_PlayMp4">mp4</button>
+        <!--m3u8直播-->
+        <button type="button" id="J_PlayLive">m3u8直播</button>
+        <!--m3u8回播-->
+        <button type="button" id="J_PlayReplay">m3u8回播</button>
+
+        <!--视频播放器-->
+        <div class="video-player-container">
+            <!--播放器容器-->
+            <div id="J_Video" class="video-player"></div>
+            <!--播放器底部扩展控制栏-->
+            <div id="J_VideoBarBottom" class="video-bar-bottom"></div>
+        </div>
+    </div>
+
+    <script src="/js/jquery.js"></script>
+    <script src="/ckplayer6.8/ckplayer/ckplayer.js"></script>
+
+    <script src="/js/video.player.js"></script>
+    <script src="/js/video.player.barrage.js"></script>
+    
+    <script src="/js/test.js"></script>
+
+</body>
+
+</html>
