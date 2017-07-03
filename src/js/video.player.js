@@ -52,8 +52,39 @@ window.CKP = window.CKP ? new Error('CKP命名空间冲突!') : function () {
  * @param {function}    params.onQualityChange      清晰度切换
  * 
  * 方法控制函数
- * @param {function}    params.play      播放视频
+ * @param {function}    params.videoPlay            播放视频
+ * @param {function}    params.videoPause           暂停播放视频
+ * @param {function}    params.playOrPause          在播放/暂停视频二个事件中进行切换
+ * @param {function}    params.videoSeek            跳转到指定秒数进行播放
+ * @param {function}    params.changeVolume         改变音量
+ * @param {function}    params.videoPlay            播放视频
+ * @param {function}    params.getStatus            获取播放器相关属性
+ * @param {function}    params.frontAdPause         暂停前置广告
+ * @param {function}    params.frontAdResume        继续播放前置广告
+ * @param {function}    params.frontAdUnload        跳过前置广告
+ * @param {function}    params.changeFace           是否隐藏控制栏
+ * @param {function}    params.plugin               控制插件
+ * @param {function}    params.plugAttribute        获取插件的相关属性
+ * @param {function}    params.videoClear           清除视频
+ * @param {function}    params.marqueeLoad          显示滚动文字广告（改变滚动文字广告内容）
+ * @param {function}    params.marqueeClose         关闭滚动文字广告
+ * @param {function}    params.allowFull            是否允许全屏
+ * @param {function}    params.videoError           显示视频加载失败
+ * @param {function}    params.errorTextShow        是否显示视频加载失败提示框
+ * @param {function}    params.promptShow           显示提示文字
+ * @param {function}    params.textBoxShow          在播放器中加载（显示）文本元件
+ * @param {function}    params.textBoxClose         关闭文本
+ * @param {function}    params.textBoxTween         文本元件进行缓动
+ * @param {function}    params.getTextBox           获取文本元件的属性
  * 
+ * @param {function}    params.destroy              销毁播放器实例
+ * @param {function}    params.reload               重新加载视频
+ * @param {function}    params.getVideoPlayer       获取播放器实例
+ * @param {function}    params.setVideoWH           设置视频播放器宽度和高度
+ * @param {function}    params.stickerAdLoad        添加贴片广告
+ * @param {function}    params.stickerAdClose       关闭贴片广告
+ * @param {function}    params.pauseAdLoad          添加暂停广告
+ * @param {function}    params.pauseAdClose         关闭贴片广告
  */
 var videoPlayer = function (params) {
 
@@ -222,7 +253,6 @@ var videoPlayer = function (params) {
      */
     function playHandler() {
         logger('开始播放');
-        CKobject.getObjectById(playerId).marqueeClose();
         typeof params.onPlay === 'function' && params.onPlay(that);
     }
 
@@ -232,7 +262,6 @@ var videoPlayer = function (params) {
      */
     function pauseHandler() {
         logger('暂停播放');
-        CKobject.getObjectById(playerId).marqueeLoad(true, '暂停滚动广告');
         typeof params.onPause === 'function' && params.onPause(that);
     }
 
@@ -447,8 +476,14 @@ var videoPlayer = function (params) {
      */
     function frontAdSkipHandler() {
         logger('跳过前置广告');
-        CKobject.getObjectById(playerId).frontAdUnload();
-        typeof params.onFrontAdSkip === 'function' && params.onFrontAdSkip(that);
+        that.frontAdUnload();
+        var canSkip = true; // 默认允许跳过前置广告
+        if (typeof params.onFrontAdSkip === 'function') {
+            canSkip = params.onFrontAdSkip(that) || true;
+        }
+        if (canSkip) {
+            that.frontAdUnload();
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
