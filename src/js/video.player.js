@@ -39,7 +39,7 @@ window.CKP = window.CKP ? new Error('CKP命名空间冲突!') : function () {
  * @param {function}    params.onMuted              静音    
  * @param {function}    params.onVolumeChange       音量改变    
  * @param {function}    params.onError              播放出错    
- * @param {function}    params.onNewVideo           新建视频    
+ * @param {function}    params.onNewVideo           新建视频（对视频的控制从这个阶段开始进行，如videoPlay()，videoPause()等等）
  * @param {function}    params.onVideoLoad          分析视频   
  * @param {function}    params.onSendNetStream      接收到视频流    
  * @param {function}    params.onLoadedMetadata     完成视频元数据信息分析   
@@ -79,7 +79,11 @@ var videoPlayer = function (params) {
         // ckplayer播放器及插件的swf路径
         swf: {
             ckplayer: '/ckplayer6.8/ckplayer/ckplayer.swf'
-        }
+        },
+        // 贴片广告
+        stickerAd: null,
+        // 暂停广告
+        pauseAd: null
     };
 
     // 将CKP指向window.CKP构造函数
@@ -380,7 +384,7 @@ var videoPlayer = function (params) {
      */
     function loadedmetadataHandler() {
         logger('完成视频元数据信息分析');
-        logger(that.player.o.getStatus());
+        logger(that.getStatus());
         typeof params.onLoadedMetadata === 'function' && params.onLoadedMetadata(that);
     }
 
@@ -495,11 +499,11 @@ var videoPlayer = function (params) {
         that.player.o.videoPause();
     }
 
-    that.playOrPause = playOrPause;
+    that.videoPlayOrPause = videoPlayOrPause;
     /**
      * 在播放/暂停视频二个事件中进行切换
      */
-    function playOrPause() {
+    function videoPlayOrPause() {
         that.player.o.playOrPause();
     }
 
@@ -569,12 +573,170 @@ var videoPlayer = function (params) {
         }
     }
 
+    that.plugin = plugin;
+    /**
+     * 控制插件
+     * 
+     * @param {string}  插件名称，如foo.swf
+     * @param {boolean} 是否显示
+     */
+    function plugin(name, display) {
+        that.player.o.plugin(name, display);
+    }
+
+    that.plugAttribute = plugAttribute;
+    /**
+     * 获取插件的相关属性
+     * 
+     * @param  {string} 插件名称，如foo.swf
+     * @return {object} exist:是否存在该插件,x:x坐标,y:y坐标,width:宽,height:高,show:是否显示
+     */
+    function plugAttribute(name) {
+        return that.player.o.plugAttribute(name);
+    }
+
     that.videoClear = videoClear;
     /**
      * 清除视频（视频清除后不能再使用newAddress来播放新的视频）
      */
     function videoClear() {
         that.player.o.videoClear();
+    }
+
+    that.marqueeLoad = marqueeLoad;
+    /**
+     * 显示滚动文字广告（改变滚动文字广告内容）
+     * 
+     * @param {string} text 滚动广告文字
+     */
+    function marqueeLoad(text) {
+        that.player.o.marqueeLoad(true, text);
+    }
+
+    that.marqueeClose = marqueeClose;
+    /**
+     * 关闭滚动文字广告
+     */
+    function marqueeClose() {
+        that.player.o.marqueeClose();
+    }
+
+    that.allowFull = allowFull;
+    /**
+     * 是否允许全屏
+     * true=允许进行（点击全屏按钮，双击播放器）全屏操作，false=不允许全屏
+     * 
+     * @param {boolean} allow 是否允许
+     */
+    function allowFull(allow) {
+        that.player.o.allowFull(allow);
+    }
+
+    that.videoError = videoError;
+    /**
+     * 显示视频加载失败
+     * 
+     * @param {string} message 错误信息
+     */
+    function videoError(message) {
+        that.player.o.videoError(message);
+    }
+
+    that.errorTextShow = errorTextShow;
+    /**
+     * 显示视频加载失败
+     * 是否显示视频加载失败提示框，true=显示，false=隐藏
+     * 
+     * @param {boolean} display 是否显示
+     */
+    function errorTextShow(display) {
+        that.player.o.errorTextShow(display);
+    }
+
+    that.promptShow = promptShow;
+    /**
+     * 显示提示文字
+     * 显示提示文字，比如鼠标经过自定义插件对显示一个提示，("显示的文字",相对于播放器左上角的x坐标，相对于播放器左上角的y坐标)
+     * 
+     * @param {string} text 提示文字
+     * @param {number} x    相对于播放器左上角的x坐标
+     * @param {number} y    相对于播放器左上角的y坐标
+     */
+    function promptShow(text, x, y) {
+        that.player.o.promptShow(text, x, y);
+    }
+
+    that.textBoxShow = textBoxShow;
+    /**
+     * 在播放器中加载（显示）文本元件
+     * 可以用来做弹幕
+     * 
+     * @param {object} o             文本元件配置对象
+     * @param {string} o.name        该文本元件的名称，主要作用是关闭时需要用到（如果没有定义，系统会自动分配一个文件名称）
+     * @param {string} o.coor        坐标，四个数字进行定义，可参考：http://www.ckplayer.com/manual/18/30.htm
+     * @param {string} o.text        文字
+     * @param {string} o.bgColor     背景颜色，如'0x000000'
+     * @param {string} o.borderColor 边框颜色，如'0x000000'
+     * @param {number} o.radius      圆角弧度
+     * @param {number} o.alpha       总体透明度
+     * @param {number} o.bgAlpha     背景透明度
+     * @param {number} o.xWidth      宽度修正
+     * @param {number} o.xHeight     高度修正
+     * @param {array}  o.pic         附加图片地址数组，可以增加多个图片，如['temp/temp1.png','temp/temp2.png','temp/temp3.png']
+     * @param {array}  o.pwh         图片缩放宽高，和上面图片一一对应，如[[30,30],[20,20],[100,100]]
+     * @param {array}  o.pEvent      添加图片的点击事件，二维数组形式，[事件名称[,附加值]]，事件名称分为三种：
+     *                               url=打开一个地址，javascript=调用一个js函数如：textbox(obj)，同时传递一个对象，对象里包含该图片的基本数据，close=关闭该文本元件
+     * @param {array}  o.pCoor       添加图片的坐标，二维数组形式，四个值控制坐标，这里的坐标是相对于文本内容的，坐标控制可参考：http://www.ckplayer.com/manual/18/30.htm
+     * @param {array}  o.pRadius     定义各图片的四个角弧度，如图片的宽高是：30,30，弧度也定义成30，则显示圆形
+     * @param {array}  o.tween       初始化缓动效果，即该文本元件加载后就进行缓动，二维数组形式，详细可参考下面的控制函数：textBoxTween()
+     */
+    function textBoxShow(config) {
+        that.player.o.textBoxShow(config);
+    }
+
+    that.textBoxClose = textBoxClose;
+    /**
+     * 关闭文本元件
+     * 
+     * @param {string} name 要关闭的文本元件名称，如果为空，则关闭所有
+     */
+    function textBoxClose(name) {
+        that.player.o.textBoxClose(name);
+    }
+
+    that.textBoxTween = textBoxTween;
+    /**
+     * 关闭文本
+     * [['y',0,-30,0.3],['x',1,-30,0.3]]，这个二维数组定义了该文本同时进行二个缓动，
+     * 一处是y轴进行移动，一个是x轴进行移动，数组里有四个参数，
+     * 意思分别是[缓动类型,相对/绝对,移动值,移动时间]，缓动类型分为三种，
+     * 分别是x,y,alpha，相对/绝对的区别是：0=相对，则先计算目前的属性值，然后缓动相对于目前的属性值，
+     * 比如上面的['y',0,-30,0.3]，是指在y轴上向上移动30个像素，1=绝对，如上面的['x',1,-30,0.3]，
+     * 是指在x轴上移动到x坐标为-30的位置，移动值是要移动的距离或透明度值，缓动时间：指完成该缓动经过的时间
+     * 
+     * @param {string} name  要进行缓动的文本元件名称
+     * @param {array}  tween 参与缓动的数组，这是一个二维数组，每组定义一个缓动方式
+     */
+    function textBoxTween(name, tween) {
+        that.player.o.textBoxTween(name, tween);
+    }
+
+    that.getTextBox = getTextBox;
+    /**
+     * 获取文本元件的属性
+     * 
+     * @param {string} name 文本元件的名称，返回一个对象，包括如下信息：
+     * @param {object} {
+     *  name: 该文本元件的名称,
+     *  x: 该文本元件的x坐标,
+     *  y: 该文本元件的y坐标,
+     *  alpha: 该文本元件的透明度，范围0-100的整数,
+     *  width: 该文本元件的宽度,
+     *  height: 该文本元件的高度
+     * }                    
+     */
+    function getTextBox(name) {
+        return that.player.o.getTextBox(name);
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -629,6 +791,150 @@ var videoPlayer = function (params) {
             width: width,
             height: height
         });
+    }
+
+    that.stickerAdLoad = stickerAdLoad;
+    /**
+     * 添加贴片广告
+     * 
+     * @param {string} sticker   贴片广告图片
+     * @param {string} url       贴片广告超链接
+     * @param {object} position  贴片广告位置
+     * @param {object} size      贴片广告图片尺寸
+     */
+    function stickerAdLoad(sticker, url, position, size) {
+        if (private.stickerAd) {
+            error('贴片广告已经存在，请勿重复添加');
+        }
+
+        var sticker = $('<div class="sticker-ad-container">\
+            <a class="sticker-ad" href="' + url + '" target="_blank">\
+                <img src="' + sticker + '" alt="贴片广告" />\
+            </a>\
+            <i class="close">关闭</i>\
+        </div>');
+        var stickerImg = sticker.children('.sticker-ad').children('img'); // 广告图片
+        var stickerClose = sticker.children('.close'); // 广告关闭按钮
+        var stickerImgWidth = 150; // 广告图片宽度
+        var stickerImgHeight = 60; // 广告图片高度
+        var stickerImgOffset = 40; // 底部控制栏偏移量
+        stickerStyles = position || {
+            position: 'absolute',
+            left: 10,
+            bottom: 15 + stickerImgOffset,
+            backgroundColor: '#fff'
+        };
+        stickerImgStyles = size || {
+            width: stickerImgWidth,
+            height: stickerImgHeight
+        };
+        stickerCloseStyles = {
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontStyle: 'normal',
+            fontWeight: 'bold',
+            margin: '0 2px'
+        };
+        // 将贴片广告添加到视频区域，并设置其样式
+        sticker.appendTo($('#' + that.player.domId));
+        sticker.css(stickerStyles);
+        stickerImg.css(stickerImgStyles);
+        stickerClose.css(stickerCloseStyles);
+
+        // 保存贴片广告对象
+        private.stickerAd = sticker;
+
+        // 点击关闭按钮，关闭贴片广告
+        stickerClose.one('click', function () {
+            stickerAdClose();
+        });
+    }
+
+    that.stickerAdClose = stickerAdClose;
+    /**
+     * 关闭贴片广告
+     */
+    function stickerAdClose() {
+        if (private.stickerAd) {
+            private.stickerAd.remove();
+            private.stickerAd = null;
+        }
+    }
+
+    that.pauseAdLoad = pauseAdLoad;
+    /**
+     * 添加暂停广告
+     * 
+     * @param {string} sticker   暂停广告图片
+     * @param {string} url       暂停广告超链接
+     * @param {object} position  暂停广告位置
+     * @param {object} size      暂停广告图片尺寸
+     */
+    function pauseAdLoad(sticker, url, position, size) {
+        if (private.pauseAd) {
+            error('暂停广告已经存在，请勿重复添加');
+        }
+
+        var pause = $('<div class="pause-ad-container">\
+            <a class="pause-ad" href="' + url + '" target="_blank">\
+                <img src="' + sticker + '" alt="暂停广告" />\
+            </a>\
+            <i class="close">关闭</i>\
+        </div>');
+        var pauseImg = pause.children('.pause-ad').children('img'); // 广告图片
+        var pauseClose = pause.children('.close'); // 广告关闭按钮
+        var pauseImgWidth = 220; // 广告图片宽度
+        var pauseImgHeight = 150; // 广告图片高度
+        var pauseImgOffset = 40; // 底部控制栏偏移量
+        pauseStyles = position || {
+            position: 'absolute',
+            left: '50%',
+            top: '50%',
+            marginLeft: -pauseImgWidth / 2,
+            marginTop: -(pauseImgHeight + pauseImgOffset) / 2,
+            backgroundColor: '#fff'
+        };
+        pauseImgStyles = size || {
+            width: pauseImgWidth,
+            height: pauseImgHeight
+        };
+        pauseCloseStyles = {
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontStyle: 'normal',
+            fontWeight: 'bold',
+            margin: '0 2px'
+        };
+        // 将暂停广告添加到视频区域，并设置其样式
+        pause.appendTo($('#' + that.player.domId));
+        pause.css(pauseStyles);
+        pauseImg.css(pauseImgStyles);
+        pauseClose.css(pauseCloseStyles);
+
+        // 保存暂停广告对象
+        private.pauseAd = pause;
+
+        // 点击关闭按钮，关闭暂停广告
+        pauseClose.one('click', function () {
+            pauseAdClose();
+        });
+    }
+
+    that.pauseAdClose = pauseAdClose;
+    /**
+     * 关闭贴片广告
+     */
+    function pauseAdClose() {
+        if (private.pauseAd) {
+            private.pauseAd.remove();
+            private.pauseAd = null;
+        }
     }
 
     /**

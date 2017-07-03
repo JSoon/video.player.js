@@ -3,6 +3,17 @@ var playerId = 'ckplayer_' + domId; // 播放器id
 var video = $('#' + domId); // 播放器容器
 var videoBarBottom = $('#J_VideoBarBottom'); // 播放器底部工具栏
 
+// 检测flash player安装情况
+if (!CKobject.Flash()['f'] || parseInt(CKobject.Flash()['v']) < 11) {
+    var info = '<div class="no-flash">\
+        您没有安装Flash或者Flash版本较低，\
+        <a href="https://get.adobe.com/cn/flashplayer/" target="_blank">\
+        请点击此处下载安装最新的Flash插件\
+        </a>\
+        </div>';
+    alert(info);
+}
+
 /**
  * mp4
  */
@@ -16,14 +27,7 @@ $('#J_PlayMp4').click(function () {
 
     // 创建播放器
     var myVideoPlayer = videoPlayer({
-        domId: 'J_Video',
-        onPlay: function (vp) {
-            console.log(vp);
-        },
-        onPlayerLoad: function (vp) {
-            vp.playOrPause();
-            // console.log(vp.getStatus());
-        }
+        domId: 'J_Video'
     });
 
     // 初始化播放器
@@ -88,6 +92,7 @@ $('#J_PlayLive').click(function () {
             m3u8: true,
             live: true,
             url: defs.SD.url,
+            // autoPlay: 1,
             // url: 'http://218.200.230.11:8080/video/migu_16.mp4',
             preAdTime: 30,
             defTexts: defTexts.join(','),
@@ -187,7 +192,40 @@ function initControlBar(myVideoPlayer) {
     var reloadBtn = $('<button type="button" id="J_Reload">重载视频</button>');
     var destroyBtn = $('<button type="button" id="J_Destroy">清除视频</button>');
 
-    videoBarBottom.html('').append(screenBtn).append(reloadBtn).append(destroyBtn);
+    // 控制栏
+    var controlOpenBtn = $('<button type="button" id="J_ControlOpen">打开底部控制栏</button>');
+    var controlCloseBtn = $('<button type="button" id="J_ControlClose">关闭底部控制栏</button>');
+
+    // 滚动文字广告
+    var marqueeOpenBtn = $('<button type="button" id="J_MarqueeOpen">打开滚动文字广告</button>');
+    var marqueeCloseBtn = $('<button type="button" id="J_MarqueeClose">关闭滚动文字广告</button>');
+
+    // 贴片广告
+    var stickerAdLoadBtn = $('<button type="button" id="J_StickerAdLoad">加载贴片广告</button>');
+    var stickerAdCloseBtn = $('<button type="button" id="J_StickerAdClose">关闭贴片广告</button>');
+
+    // 暂停广告
+    var pauseAdLoadBtn = $('<button type="button" id="J_PauseAdLoad">加载暂停广告</button>');
+    var pauseAdCloseBtn = $('<button type="button" id="J_PauseAdClose">关闭暂停广告</button>');
+
+    // 弹幕
+    var barrageInput = $('<input type="text" id="J_BarrageInput" />');
+
+    videoBarBottom.html('')
+        .append(screenBtn)
+        .append(reloadBtn)
+        .append(destroyBtn)
+        .append(controlOpenBtn)
+        .append(controlCloseBtn)
+        .append('<br>')
+        .append(marqueeOpenBtn)
+        .append(marqueeCloseBtn)
+        .append('<br>')
+        .append(stickerAdLoadBtn)
+        .append(stickerAdCloseBtn)
+        .append(pauseAdLoadBtn)
+        .append(pauseAdCloseBtn)
+    // .append(barrageInput);
 
     /**
      * 重新加载视频
@@ -201,9 +239,7 @@ function initControlBar(myVideoPlayer) {
      */
     destroyBtn.on('click', function () {
         myVideoPlayer.destroy();
-        screenBtn.remove();
-        reloadBtn.remove();
-        destroyBtn.remove();
+        videoBarBottom.html('');
     });
 
     /**
@@ -219,4 +255,62 @@ function initControlBar(myVideoPlayer) {
             myVideoPlayer.setVideoWH(600, 400);
         }
     });
+
+    /**
+     * 底部控制栏
+     */
+    controlOpenBtn.on('click', function () {
+        myVideoPlayer.changeFace(false);
+    });
+    controlCloseBtn.on('click', function () {
+        myVideoPlayer.changeFace(true);
+    });
+
+    /**
+     * 滚动文字广告
+     */
+    marqueeOpenBtn.on('click', function () {
+        myVideoPlayer.marqueeLoad('滚动文字广告展示');
+    });
+    marqueeCloseBtn.on('click', function () {
+        myVideoPlayer.marqueeClose();
+    });
+
+    /**
+     * 贴片广告
+     */
+    stickerAdLoadBtn.on('click', function () {
+        myVideoPlayer.stickerAdLoad('https://www.baidu.com/img/bd_logo1.png', 'http://www.baidu.com');
+    });
+    stickerAdCloseBtn.on('click', function () {
+        myVideoPlayer.stickerAdClose();
+    });
+
+    /**
+     * 暂停广告
+     */
+    pauseAdLoadBtn.on('click', function () {
+        myVideoPlayer.pauseAdLoad('https://www.baidu.com/img/bd_logo1.png', 'http://www.baidu.com');
+    });
+    pauseAdCloseBtn.on('click', function () {
+        myVideoPlayer.pauseAdClose();
+    });
+
+    /**
+     * 发送弹幕
+     */
+    // barrageInput.on('keyup', function (e) {
+    //     // 点击回车
+    //     if (e.which == 13) {
+    //         myVideoPlayer.textBoxShow({
+    //             name: 'textboxname', //该文本元件的名称，主要作用是关闭时需要用到
+    //             coor: '0,2,-100,-100', //坐标
+    //             text: '{font color="#000" size="12" face="Microsoft YaHei,微软雅黑"}弹幕1号{/font}',
+    //             bgAlpha: 0, //背景透明度
+    //             tween: [
+    //                 ['x', 1, 700, 1]
+    //             ]
+    //         });
+    //     }
+    // });
 }

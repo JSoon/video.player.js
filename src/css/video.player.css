@@ -1,8 +1,21 @@
+/*播放器容器*/
+
 .video-player-container {
     position: relative;
     margin: 5px 0;
 }
 
+
+/*播放器*/
+
+.video-player {
+    position: relative;
+    display: inline-block;
+}
+
 .video-bar-bottom {
     margin: 5px 0;
 }
+
+
+/*贴片广告*/
