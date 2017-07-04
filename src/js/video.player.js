@@ -50,6 +50,8 @@ window.CKP = window.CKP ? new Error('CKP命名空间冲突!') : function () {
  * @param {function}    params.onFrontAdStart       加载前置广告
  * @param {function}    params.onFrontAdSkip        "跳过广告"按钮被点击
  * @param {function}    params.onQualityChange      清晰度切换
+ * @param {function}    params.onBarrageSwitcherOn  打开弹幕
+ * @param {function}    params.onBarrageSwitcherOff 关闭弹幕
  * 
  * 方法控制函数
  * @param {function}    params.videoPlay            播放视频
@@ -104,7 +106,7 @@ var videoPlayer = function (params) {
     };
 
     // 私有变量对象
-    var private = {
+    var PRIVATE = {
         // 播放器初始化参数
         initOpts: {},
         // ckplayer播放器及插件的swf路径
@@ -114,7 +116,9 @@ var videoPlayer = function (params) {
         // 贴片广告
         stickerAd: null,
         // 暂停广告
-        pauseAd: null
+        pauseAd: null,
+        // 弹幕开关状态
+        barrageStat: false
     };
 
     // 将CKP指向window.CKP构造函数
@@ -507,11 +511,24 @@ var videoPlayer = function (params) {
      */
     function qualityChangeHandler(url, time, volume) {
         var m3u8 = false;
-        if (private.initOpts.m3u8) {
+        if (PRIVATE.initOpts.m3u8) {
             m3u8 = true;
         }
         typeof params.onQualityChange === 'function' && params.onQualityChange(that);
         return m3u8;
+    }
+
+    CKPrototype.barrageSwitcherHandler = barrageSwitcherHandler;
+    /**
+     * 弹幕开关回调函数
+     */
+    function barrageSwitcherHandler(stat) {
+        PRIVATE.barrageStat = stat; // 获取弹幕开关状态
+        if (stat) { // 打开弹幕
+            typeof params.onbarrageSwitcherOn === 'function' && params.onbarrageSwitcherOn(that);
+        } else { // 关闭弹幕
+            typeof params.onbarrageSwitcherOff === 'function' && params.onbarrageSwitcherOff(that);
+        }
     }
 
     /////////////////////////////////////////////////////////////////////////////////////
@@ -741,7 +758,7 @@ var videoPlayer = function (params) {
 
     that.textBoxTween = textBoxTween;
     /**
-     * 关闭文本
+     * 文本元件进行缓动
      * [['y',0,-30,0.3],['x',1,-30,0.3]]，这个二维数组定义了该文本同时进行二个缓动，
      * 一处是y轴进行移动，一个是x轴进行移动，数组里有四个参数，
      * 意思分别是[缓动类型,相对/绝对,移动值,移动时间]，缓动类型分为三种，
@@ -794,7 +811,7 @@ var videoPlayer = function (params) {
     function reload() {
         that.videoClear(); // 清除正在播放的视频
         // 自动播放重新加载后的视频
-        var opts = $.extend(true, private.initOpts, {
+        var opts = $.extend(true, PRIVATE.initOpts, {
             autoPlay: 1
         });
         init(opts);
@@ -838,7 +855,7 @@ var videoPlayer = function (params) {
      * @param {object} size      贴片广告图片尺寸
      */
     function stickerAdLoad(sticker, url, position, size) {
-        if (private.stickerAd) {
+        if (PRIVATE.stickerAd) {
             error('贴片广告已经存在，请勿重复添加');
         }
 
@@ -880,7 +897,7 @@ var videoPlayer = function (params) {
         stickerClose.css(stickerCloseStyles);
 
         // 保存贴片广告对象
-        private.stickerAd = sticker;
+        PRIVATE.stickerAd = sticker;
 
         // 点击关闭按钮，关闭贴片广告
         stickerClose.one('click', function () {
@@ -893,9 +910,9 @@ var videoPlayer = function (params) {
      * 关闭贴片广告
      */
     function stickerAdClose() {
-        if (private.stickerAd) {
-            private.stickerAd.remove();
-            private.stickerAd = null;
+        if (PRIVATE.stickerAd) {
+            PRIVATE.stickerAd.remove();
+            PRIVATE.stickerAd = null;
         }
     }
 
@@ -909,7 +926,7 @@ var videoPlayer = function (params) {
      * @param {object} size      暂停广告图片尺寸
      */
     function pauseAdLoad(sticker, url, position, size) {
-        if (private.pauseAd) {
+        if (PRIVATE.pauseAd) {
             error('暂停广告已经存在，请勿重复添加');
         }
 
@@ -953,7 +970,7 @@ var videoPlayer = function (params) {
         pauseClose.css(pauseCloseStyles);
 
         // 保存暂停广告对象
-        private.pauseAd = pause;
+        PRIVATE.pauseAd = pause;
 
         // 点击关闭按钮，关闭暂停广告
         pauseClose.one('click', function () {
@@ -966,9 +983,9 @@ var videoPlayer = function (params) {
      * 关闭贴片广告
      */
     function pauseAdClose() {
-        if (private.pauseAd) {
-            private.pauseAd.remove();
-            private.pauseAd = null;
+        if (PRIVATE.pauseAd) {
+            PRIVATE.pauseAd.remove();
+            PRIVATE.pauseAd = null;
         }
     }
 
@@ -1079,7 +1096,7 @@ var videoPlayer = function (params) {
         var autoPlay = opts.autoPlay || 2;
 
         // 保存播放器初始化参数（以便在其他事件中访问，如reload等）
-        private.initOpts = opts;
+        PRIVATE.initOpts = opts;
 
         logger(opts);
 
@@ -1137,7 +1154,7 @@ var videoPlayer = function (params) {
 
         // 调用flashplayer，生成flash播放器
         CKobject.embedSWF(
-            private.swf.ckplayer,
+            PRIVATE.swf.ckplayer,
             that.player.domId,
             that.player.playerId,
             that.player.width,

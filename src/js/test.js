@@ -209,9 +209,13 @@ function initControlBar(myVideoPlayer) {
     var pauseAdCloseBtn = $('<button type="button" id="J_PauseAdClose">关闭暂停广告</button>');
 
     // 弹幕
-    var barrageInput = $('<input type="text" id="J_BarrageInput" />');
+    var barrageInput = $('<input type="text" id="J_BarrageInput" class="video-barrage-input" placeholder="输入弹幕，回车发送" />');
+    var barrageClearBtn = $('<button type="button" id="J_BarrageClose">清除弹幕</button>');
 
     videoBarBottom.html('')
+        .append(barrageInput)
+        .append(barrageClearBtn)
+        .append('<br>')
         .append(screenBtn)
         .append(reloadBtn)
         .append(destroyBtn)
@@ -224,8 +228,7 @@ function initControlBar(myVideoPlayer) {
         .append(stickerAdLoadBtn)
         .append(stickerAdCloseBtn)
         .append(pauseAdLoadBtn)
-        .append(pauseAdCloseBtn)
-    // .append(barrageInput);
+        .append(pauseAdCloseBtn);
 
     /**
      * 重新加载视频
@@ -299,18 +302,94 @@ function initControlBar(myVideoPlayer) {
     /**
      * 发送弹幕
      */
-    // barrageInput.on('keyup', function (e) {
-    //     // 点击回车
-    //     if (e.which == 13) {
-    //         myVideoPlayer.textBoxShow({
-    //             name: 'textboxname', //该文本元件的名称，主要作用是关闭时需要用到
-    //             coor: '0,2,-100,-100', //坐标
-    //             text: '{font color="#000" size="12" face="Microsoft YaHei,微软雅黑"}弹幕1号{/font}',
-    //             bgAlpha: 0, //背景透明度
-    //             tween: [
-    //                 ['x', 1, 700, 1]
-    //             ]
-    //         });
-    //     }
-    // });
+    barrageInput.on('keyup', function (e) {
+        // 点击回车，发送弹幕
+        if (e.which == 13) {
+
+            // for (var i = 0; i < 10; i++) {
+
+            var text = $(this).val(); // 弹幕文本
+            var fx = randomBarragePosition(); // 弹幕在y轴上的位置
+            var duration = randomUniform(30, 60); // 弹幕飘过屏幕动画时间
+
+            myVideoPlayer.textBoxShow({
+                // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
+                coor: '2,0,0,' + fx, //坐标
+                text: '{font color="#000" size="18" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
+                bgAlpha: 0, //背景透明度
+                tween: [
+                    ['x', 0, -2000, duration]
+                ]
+            });
+
+            // }
+
+        }
+    });
+
+    /**
+     * 清除弹幕
+     */
+    barrageClearBtn.on('click', function () {
+        myVideoPlayer.textBoxClose();
+    });
+}
+
+/**
+ * 利用Box-Muller法生成一个服从标准正态分布的随机数
+ * https://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
+ */
+function randomNDWithBM() {
+    var u = 1 - Math.random(); // 获取[0, 1)的补集(0, 1]
+    var v = 1 - Math.random();
+    return Math.sqrt(-2.0 * Math.log(u)) * Math.cos(2.0 * Math.PI * v);
+}
+
+/**
+ * 生成均匀分布随机数
+ */
+function randomUniform(min, max) {
+    // Math.random() ∈ [0, 1)
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
+/**
+ * 随机生成弹幕位置
+ */
+function randomBarragePosition() {
+    // // 利用标准正态分布，采用10000次模拟下的，偏移到正数区间的x'∈[0, 7.70]，生成一个区间在[0, 160]之间，符合正态分布的随机数（且取正数）
+    // var randomND = randomNDWithBM() + 3.85;
+    // var fx = 160 - Math.abs(160 / 7.70 * randomND);
+    // // 由于标准正态分布x的值计算的到的随机数可能大于150
+    // // 最终计算出来的fx可能会小于0，故对fx进行绝对值处理
+    // // 虽说此举会产生一定的误差，但是在开发应用中并不需要十分严谨，故忽略掉
+    // fx = Math.abs(fx);
+
+    // 利用均匀分布，生成随机数
+    var fx = randomUniform(0, 160);
+
+    /**
+     * 防止弹幕行重叠：
+     * 设置弹幕字体大小为18px，行高为20px，
+     * 则可以将弹幕起点设置为[0, 20, 40, 20x ... , 140, 160]
+     */
+    if (fx >= 0 && fx <= 20) {
+        fx = 0;
+    } else if (fx > 20 && fx <= 40) {
+        fx = 20;
+    } else if (fx > 40 && fx <= 60) {
+        fx = 40;
+    } else if (fx > 60 && fx <= 80) {
+        fx = 60;
+    } else if (fx > 80 && fx <= 100) {
+        fx = 80;
+    } else if (fx > 100 && fx <= 120) {
+        fx = 100;
+    } else if (fx > 120 && fx <= 140) {
+        fx = 120;
+    } else if (fx > 140 && fx <= 160) {
+        fx = 140;
+    }
+
+    return fx;
 }
