@@ -302,27 +302,33 @@ function initControlBar(myVideoPlayer) {
     /**
      * 发送弹幕
      */
+    var lastFx;
     barrageInput.on('keyup', function (e) {
         // 点击回车，发送弹幕
         if (e.which == 13) {
 
-            // for (var i = 0; i < 10; i++) {
+            for (var i = 0; i < 10; i++) {
 
-            var text = $(this).val(); // 弹幕文本
-            var fx = randomBarragePosition(); // 弹幕在y轴上的位置
-            var duration = randomUniform(30, 60); // 弹幕飘过屏幕动画时间
+                var text = $(this).val(); // 弹幕文本
+                var fx = randomBarragePosition(); // 弹幕在y轴上的位置
+                while (fx === lastFx) {
+                    fx = randomBarragePosition();
+                }
+                lastFx = fx;
+                console.log(fx);
+                var duration = randomUniform(30, 60); // 弹幕飘过屏幕动画时间
 
-            myVideoPlayer.textBoxShow({
-                // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
-                coor: '2,0,0,' + fx, //坐标
-                text: '{font color="#000" size="18" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
-                bgAlpha: 0, //背景透明度
-                tween: [
-                    ['x', 0, -2000, duration]
-                ]
-            });
+                myVideoPlayer.textBoxShow({
+                    // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
+                    coor: '2,0,0,' + fx, //坐标
+                    text: '{font color="#000" size="18" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
+                    bgAlpha: 0, //背景透明度
+                    tween: [
+                        ['x', 0, -2000, duration]
+                    ]
+                });
 
-            // }
+            }
 
         }
     });

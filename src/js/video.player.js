@@ -859,7 +859,7 @@ var videoPlayer = function (params) {
             error('贴片广告已经存在，请勿重复添加');
         }
 
-        var sticker = $('<div class="sticker-ad-container">\
+        sticker = $('<div class="sticker-ad-container">\
             <a class="sticker-ad" href="' + url + '" target="_blank">\
                 <img src="' + sticker + '" alt="贴片广告" />\
             </a>\
@@ -870,17 +870,17 @@ var videoPlayer = function (params) {
         var stickerImgWidth = 150; // 广告图片宽度
         var stickerImgHeight = 60; // 广告图片高度
         var stickerImgOffset = 40; // 底部控制栏偏移量
-        stickerStyles = position || {
+        var stickerStyles = position || {
             position: 'absolute',
             left: 10,
             bottom: 15 + stickerImgOffset,
             backgroundColor: '#fff'
         };
-        stickerImgStyles = size || {
+        var stickerImgStyles = size || {
             width: stickerImgWidth,
             height: stickerImgHeight
         };
-        stickerCloseStyles = {
+        var stickerCloseStyles = {
             position: 'absolute',
             top: 0,
             right: 0,
@@ -941,7 +941,7 @@ var videoPlayer = function (params) {
         var pauseImgWidth = 220; // 广告图片宽度
         var pauseImgHeight = 150; // 广告图片高度
         var pauseImgOffset = 40; // 底部控制栏偏移量
-        pauseStyles = position || {
+        var pauseStyles = position || {
             position: 'absolute',
             left: '50%',
             top: '50%',
@@ -949,11 +949,11 @@ var videoPlayer = function (params) {
             marginTop: -(pauseImgHeight + pauseImgOffset) / 2,
             backgroundColor: '#fff'
         };
-        pauseImgStyles = size || {
+        var pauseImgStyles = size || {
             width: pauseImgWidth,
             height: pauseImgHeight
         };
-        pauseCloseStyles = {
+        var pauseCloseStyles = {
             position: 'absolute',
             top: 0,
             right: 0,
@@ -1044,7 +1044,7 @@ var videoPlayer = function (params) {
         //     i: 'http://www.ckplayer.com/static/images/cqdw.jpg',
         //     loaded: 'loadedHandler'
         // };
-        var opts = opts || {};
+        opts = opts || {};
         // 视频播放地址
         var url = opts.url || '';
 
