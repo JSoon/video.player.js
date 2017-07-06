@@ -22,11 +22,13 @@
         <!--视频播放器-->
         <div class="video-player-container">
             <!--播放器容器-->
-            <div id="J_Video" class="video-player"></div>
+            <div id="J_Video" class="video-player-wrapper"></div>
             <!--播放器底部扩展控制栏-->
             <div id="J_VideoBarBottom" class="video-bar-bottom"></div>
         </div>
     </div>
+
+    <button id="NewWindow">打开新窗口</button>
 
     <script src="/js/jquery.js"></script>
     <script src="/ckplayer6.8/ckplayer/ckplayer.js"></script>
@@ -36,6 +38,13 @@
 
     <script src="/js/test.js"></script>
 
+    <script>
+        $('#NewWindow').click(function () {
+            window.open('http://www.baidu.com', 'newwindow',
+                'toolbar=no, menubar=no, scrollbars=no'
+            );
+        });
+    </script>
 </body>
 
 </html>

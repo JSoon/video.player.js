@@ -10,6 +10,8 @@
  * @author J.Soon <serdeemail@gmail.com>
  */
 
+"use strict";
+
 /**
  * CKP构造函数
  * 用于保存用户定义的事件函数，以及播放器插件的拓展
@@ -56,7 +58,7 @@ window.CKP = window.CKP ? new Error('CKP命名空间冲突!') : function () {
  * 方法控制函数
  * @param {function}    params.videoPlay            播放视频
  * @param {function}    params.videoPause           暂停播放视频
- * @param {function}    params.playOrPause          在播放/暂停视频二个事件中进行切换
+ * @param {function}    params.videoPlayOrPause          在播放/暂停视频二个事件中进行切换
  * @param {function}    params.videoSeek            跳转到指定秒数进行播放
  * @param {function}    params.changeVolume         改变音量
  * @param {function}    params.videoPlay            播放视频
@@ -89,7 +91,6 @@ window.CKP = window.CKP ? new Error('CKP命名空间冲突!') : function () {
  * @param {function}    params.pauseAdClose         关闭贴片广告
  */
 var videoPlayer = function (params) {
-
     var that = {}; // 对外暴露接口的对象
 
     // 播放器信息
@@ -100,7 +101,7 @@ var videoPlayer = function (params) {
          */
         o: null,
         domId: params.domId, // 视频所在容器的id
-        playerId: 'ckplayer_' + this.domId, // 播放器id
+        playerId: 'ckplayer_' + params.domId, // 播放器id
         width: params.width || 600, // 播放器宽度
         height: params.height || 400 // 播放器高度
     };
@@ -118,7 +119,21 @@ var videoPlayer = function (params) {
         // 暂停广告
         pauseAd: null,
         // 弹幕开关状态
-        barrageStat: false
+        barrageStat: false,
+        // 视频是否暂停
+        paused: true,
+        // 弹幕
+        barrage: {
+            container: params.domId + '_BarrageWrapper', // 弹幕容器id
+            length: 0, // 弹幕总数
+            // 弹幕队列
+            list: {
+                // 1: {  // 弹幕id
+                //     dom: , // 弹幕jquery对象
+                //     animation: // 弹幕动画函数
+                // }
+            }
+        }
     };
 
     // 将CKP指向window.CKP构造函数
@@ -267,6 +282,21 @@ var videoPlayer = function (params) {
     function pauseHandler() {
         logger('暂停播放');
         typeof params.onPause === 'function' && params.onPause(that);
+    }
+
+    CKPrototype.pausedHandler = pausedHandler;
+    /**
+     * 是否暂停播放
+     * 
+     * @param {boolean} paused 是否暂停状态，true=暂停，undefined=播放（不清楚为什么是undefined..fk）
+     */
+    function pausedHandler(paused) {
+        if (paused) {
+            PRIVATE.paused = true;
+        } else {
+            PRIVATE.paused = false;
+        }
+        barragePauseOrResume();
     }
 
     CKPrototype.bufferHandler = bufferHandler;
@@ -863,10 +893,12 @@ var videoPlayer = function (params) {
             <a class="sticker-ad" href="' + url + '" target="_blank">\
                 <img src="' + sticker + '" alt="贴片广告" />\
             </a>\
+            <i class="flag">广告</i>\
             <i class="close">关闭</i>\
         </div>');
         var stickerImg = sticker.children('.sticker-ad').children('img'); // 广告图片
         var stickerClose = sticker.children('.close'); // 广告关闭按钮
+        var stickerFlag = sticker.children('.flag'); // 广告标识
         var stickerImgWidth = 150; // 广告图片宽度
         var stickerImgHeight = 60; // 广告图片高度
         var stickerImgOffset = 40; // 底部控制栏偏移量
@@ -884,17 +916,32 @@ var videoPlayer = function (params) {
             position: 'absolute',
             top: 0,
             right: 0,
+            display: 'inline-block',
+            padding: '1px 3px',
             cursor: 'pointer',
             fontSize: '12px',
             fontStyle: 'normal',
-            fontWeight: 'bold',
-            margin: '0 2px'
+            fontWeight: 'bold'
+        };
+        var stickerFlagStyles = {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            display: 'inline-block',
+            padding: '1px 3px',
+            backgroundColor: '#999',
+            cursor: 'pointer',
+            color: '#fff',
+            fontSize: '12px',
+            fontStyle: 'normal',
+            fontWeight: 'lighter'
         };
         // 将贴片广告添加到视频区域，并设置其样式
         sticker.appendTo($('#' + that.player.domId));
         sticker.css(stickerStyles);
         stickerImg.css(stickerImgStyles);
         stickerClose.css(stickerCloseStyles);
+        stickerFlag.css(stickerFlagStyles);
 
         // 保存贴片广告对象
         PRIVATE.stickerAd = sticker;
@@ -934,10 +981,12 @@ var videoPlayer = function (params) {
             <a class="pause-ad" href="' + url + '" target="_blank">\
                 <img src="' + sticker + '" alt="暂停广告" />\
             </a>\
+            <i class="flag">广告</i>\
             <i class="close">关闭</i>\
         </div>');
         var pauseImg = pause.children('.pause-ad').children('img'); // 广告图片
         var pauseClose = pause.children('.close'); // 广告关闭按钮
+        var pauseFlag = pause.children('.flag'); // 广告标识
         var pauseImgWidth = 220; // 广告图片宽度
         var pauseImgHeight = 150; // 广告图片高度
         var pauseImgOffset = 40; // 底部控制栏偏移量
@@ -957,17 +1006,32 @@ var videoPlayer = function (params) {
             position: 'absolute',
             top: 0,
             right: 0,
+            display: 'inline-block',
+            padding: '1px 3px',
             cursor: 'pointer',
             fontSize: '12px',
             fontStyle: 'normal',
-            fontWeight: 'bold',
-            margin: '0 2px'
+            fontWeight: 'bold'
+        };
+        var pauseFlagStyles = {
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            display: 'inline-block',
+            padding: '1px 3px',
+            backgroundColor: '#999',
+            cursor: 'pointer',
+            color: '#fff',
+            fontSize: '12px',
+            fontStyle: 'normal',
+            fontWeight: 'lighter'
         };
         // 将暂停广告添加到视频区域，并设置其样式
         pause.appendTo($('#' + that.player.domId));
         pause.css(pauseStyles);
         pauseImg.css(pauseImgStyles);
         pauseClose.css(pauseCloseStyles);
+        pauseFlag.css(pauseFlagStyles);
 
         // 保存暂停广告对象
         PRIVATE.pauseAd = pause;
@@ -986,6 +1050,139 @@ var videoPlayer = function (params) {
         if (PRIVATE.pauseAd) {
             PRIVATE.pauseAd.remove();
             PRIVATE.pauseAd = null;
+        }
+    }
+
+    that.barrageAdd = barrageAdd;
+    /**
+     * 添加弹幕
+     * 
+     * @param {object}      config              弹幕配置
+     * @param {string}      config.direction    弹幕移动方向
+     * @param {number}      config.top          弹幕距播放区域顶部的坐标
+     * @param {string}      config.html         弹幕html结构
+     * @param {number}      config.duration     弹幕飘过屏幕的时间
+     * @param {object}      config.fontStyle    弹幕文字样式  
+     * @param {object}      config.imgStyle     弹幕图片样式  
+     * @param {function}    complete            弹幕移动完毕后回调函数
+     */
+    function barrageAdd(config, complete) {
+        // 创建弹幕区域
+        var playerWrapper = $('#' + that.player.domId); // 播放器区域
+        var barrageWrapper = $('#' + PRIVATE.barrage.container); // 弹幕区域
+        if ($('#' + PRIVATE.barrage.container).length === 0) {
+            barrageWrapper = $('<div id="' + PRIVATE.barrage.container + '" class="video-player-barrage-wrapper"></div>'); // 弹幕区域
+            // 给弹幕区域绑定点击事件，用于切换播放/暂停
+            barrageWrapper.on('click', function () {
+                videoPlayOrPause();
+            });
+        }
+        playerWrapper.append(barrageWrapper); // 添加弹幕区域到播放器区域
+        var barrage = $('<div class="video-player-barrage-item"></div>'); // 单条弹幕
+        var barrageStyle = {}; // 弹幕样式
+        var barrageAnimate = {}; // 弹幕动画
+        config.direction = config.direction || 'left'; // 默认从右向左移动
+        barrageWrapper.append(barrage); // 添加单条弹幕到弹幕区域
+        switch (config.direction) {
+            case 'left':
+                barrageStyle = {
+                    position: 'absolute',
+                    top: config.top,
+                    left: '100%',
+                    whiteSpace: 'nowrap'
+                };
+                styling();
+                barrageAnimate = {
+                    left: -barrage.width()
+                };
+                break;
+            case 'right':
+                barrageStyle = {
+                    position: 'absolute',
+                    top: config.top,
+                    right: '100%',
+                    whiteSpace: 'nowrap'
+                };
+                styling();
+                barrageAnimate = {
+                    right: -barrage.width()
+                };
+                break;
+            default:
+                break;
+        }
+        // 弹幕样式设置
+        // 在获取barrage.width()前将弹幕样式设置好，才能获取到真实的width
+        function styling() {
+            barrageStyle = $.extend(barrageStyle, config.fontStyle);
+            barrage.html(config.html).css(barrageStyle);
+        }
+        /**
+         * 弹幕动画函数
+         * 
+         * @param {number} id       弹幕id
+         * @param {number} duration 弹幕动画持续时间（毫秒）
+         */
+        function animation(id, duration) {
+            if (!barrage.is(':animated')) {
+                barrage.animate(barrageAnimate, {
+                    duration: duration,
+                    easing: 'linear',
+                    complete: function () {
+                        typeof complete === 'function' && complete();
+                        barrage.remove();
+                        // 动画结束后，同步删除PRIVATE.barrage.list中的元素
+                        delete PRIVATE.barrage.list[id];
+                        // 再同步减去弹幕数量
+                        PRIVATE.barrage.length -= 1;
+                    }
+                });
+            }
+        }
+        // 存储弹幕动画，用于暂停/恢复弹幕动画
+        PRIVATE.barrage.length += 1;
+        PRIVATE.barrage.list[PRIVATE.barrage.length] = {
+            dom: barrage, // 弹幕jquery对象
+            animation: animation, // 动画函数
+            duration: config.duration, // 动画持续时间
+            startTime: new Date() // 记录动画开始时间
+        };
+        animation(PRIVATE.barrage.length, config.duration); // 播放弹幕动画
+    }
+
+    that.barrageClear = barrageClear;
+    /**
+     * 清除弹幕
+     */
+    function barrageClear() {
+        if ($('#' + PRIVATE.barrage.container).length) {
+            $('#' + PRIVATE.barrage.container).empty();
+            PRIVATE.barrage.length = 0;
+            PRIVATE.barrage.list = {};
+        }
+    }
+
+    that.barragePauseOrResume = barragePauseOrResume;
+    /**
+     * 控制弹幕动画暂停/恢复
+     */
+    function barragePauseOrResume() {
+        for (var key in PRIVATE.barrage.list) {
+            // 如果当前是暂停播放，则暂停弹幕动画
+            if (PRIVATE.paused === true) {
+                PRIVATE.barrage.list[key].dom.stop();
+                // 经过的动画时间
+                var passedTime = new Date() - PRIVATE.barrage.list[key].startTime;
+                // 剩下的动画时间
+                var leftDuration = PRIVATE.barrage.list[key].duration - passedTime;
+                PRIVATE.barrage.list[key].duration = leftDuration;
+            }
+            // 如果当前是正在播放，则恢复弹幕动画
+            else if (PRIVATE.paused === false) {
+                // 更新动画开始时间为恢复弹幕动画的实时时间
+                PRIVATE.barrage.list[key].startTime = new Date();
+                PRIVATE.barrage.list[key].animation(key, PRIVATE.barrage.list[key].duration);
+            }
         }
     }
 

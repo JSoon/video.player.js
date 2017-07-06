@@ -2,7 +2,6 @@ var domId = 'J_Video'; // 视频所在容器的id
 var playerId = 'ckplayer_' + domId; // 播放器id
 var video = $('#' + domId); // 播放器容器
 var videoBarBottom = $('#J_VideoBarBottom'); // 播放器底部工具栏
-
 // 检测flash player安装情况
 if (!CKobject.Flash()['f'] || parseInt(CKobject.Flash()['v']) < 11) {
     var info = '<div class="no-flash">\
@@ -307,28 +306,37 @@ function initControlBar(myVideoPlayer) {
         // 点击回车，发送弹幕
         if (e.which == 13) {
 
-            for (var i = 0; i < 10; i++) {
+            // for (var i = 0; i < 12; i++) {
 
-                var text = $(this).val(); // 弹幕文本
-                var fx = randomBarragePosition(); // 弹幕在y轴上的位置
-                while (fx === lastFx) {
-                    fx = randomBarragePosition();
-                }
-                lastFx = fx;
-                console.log(fx);
-                var duration = randomUniform(30, 60); // 弹幕飘过屏幕动画时间
-
-                myVideoPlayer.textBoxShow({
-                    // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
-                    coor: '2,0,0,' + fx, //坐标
-                    text: '{font color="#000" size="18" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
-                    bgAlpha: 0, //背景透明度
-                    tween: [
-                        ['x', 0, -2000, duration]
-                    ]
-                });
-
+            var text = $(this).val(); // 弹幕文本
+            var fx = randomBarragePosition(); // 弹幕在y轴上的位置
+            while (fx === lastFx) {
+                fx = randomBarragePosition();
             }
+            lastFx = fx;
+            // console.log(fx);
+            var duration = randomUniform(30, 60); // 弹幕飘过屏幕动画时间
+
+            myVideoPlayer.barrageAdd({
+                html: text,
+                top: fx,
+                duration: 20000,
+                fontStyle: {
+                    fontSize: 24
+                }
+            });
+
+            // myVideoPlayer.textBoxShow({
+            //     // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
+            //     coor: '2,0,0,' + fx, //坐标
+            //     text: '{font color="#000" size="20" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
+            //     bgAlpha: 0, //背景透明度
+            //     tween: [
+            //         ['x', 0, -2000, duration]
+            //     ]
+            // });
+
+            // }
 
         }
     });
@@ -337,7 +345,7 @@ function initControlBar(myVideoPlayer) {
      * 清除弹幕
      */
     barrageClearBtn.on('click', function () {
-        myVideoPlayer.textBoxClose();
+        myVideoPlayer.barrageClear();
     });
 }
 
@@ -371,30 +379,42 @@ function randomBarragePosition() {
     // // 虽说此举会产生一定的误差，但是在开发应用中并不需要十分严谨，故忽略掉
     // fx = Math.abs(fx);
 
+    var totalRows = 12; // 弹幕总排数
+    var lineHeight = 26; // 行高
+    var totalHeight = totalRows * lineHeight; // 弹幕区域总高度
+
     // 利用均匀分布，生成随机数
-    var fx = randomUniform(0, 160);
+    var fx = randomUniform(0, totalHeight);
 
     /**
      * 防止弹幕行重叠：
-     * 设置弹幕字体大小为18px，行高为20px，
-     * 则可以将弹幕起点设置为[0, 20, 40, 20x ... , 140, 160]
+     * 设置行高为lineHeight，
+     * 则可以将弹幕起点设置为[0, lineHeight, lineHeight*2, ... , lineHeight*totalRows]
      */
-    if (fx >= 0 && fx <= 20) {
+    if (fx >= 0 && fx <= lineHeight) {
         fx = 0;
-    } else if (fx > 20 && fx <= 40) {
-        fx = 20;
-    } else if (fx > 40 && fx <= 60) {
-        fx = 40;
-    } else if (fx > 60 && fx <= 80) {
-        fx = 60;
-    } else if (fx > 80 && fx <= 100) {
-        fx = 80;
-    } else if (fx > 100 && fx <= 120) {
-        fx = 100;
-    } else if (fx > 120 && fx <= 140) {
-        fx = 120;
-    } else if (fx > 140 && fx <= 160) {
-        fx = 140;
+    } else if (fx > lineHeight && fx <= lineHeight * 2) {
+        fx = lineHeight;
+    } else if (fx > lineHeight * 2 && fx <= lineHeight * 3) {
+        fx = lineHeight * 2;
+    } else if (fx > lineHeight * 3 && fx <= lineHeight * 4) {
+        fx = lineHeight * 3;
+    } else if (fx > lineHeight * 4 && fx <= lineHeight * 5) {
+        fx = lineHeight * 4;
+    } else if (fx > lineHeight * 5 && fx <= lineHeight * 6) {
+        fx = lineHeight * 5;
+    } else if (fx > lineHeight * 6 && fx <= lineHeight * 7) {
+        fx = lineHeight * 6;
+    } else if (fx > lineHeight * 7 && fx <= lineHeight * 8) {
+        fx = lineHeight * 7;
+    } else if (fx > lineHeight * 8 && fx <= lineHeight * 9) {
+        fx = lineHeight * 8;
+    } else if (fx > lineHeight * 9 && fx <= lineHeight * 10) {
+        fx = lineHeight * 9;
+    } else if (fx > lineHeight * 10 && fx <= lineHeight * 11) {
+        fx = lineHeight * 10;
+    } else if (fx > lineHeight * 11 && fx <= lineHeight * 12) {
+        fx = lineHeight * 11;
     }
 
     return fx;

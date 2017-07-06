@@ -13,8 +13,11 @@
 
 /*播放器容器*/
 
-.video-player {
+.video-player-wrapper {
     position: relative;
+    display: inline-block;
+    width: 600px;
+    height: 400px;
 }
 
 
@@ -22,6 +25,20 @@
 
 .video-bar-bottom {
     margin: 5px 0;
+}
+
+
+/*弹幕*/
+
+.video-player-barrage-wrapper {
+    position: absolute;
+    top: 0;
+    right: 0;
+    /*留出底部操作栏的高度*/
+    bottom: 46px;
+    left: 0;
+    overflow: hidden;
+    cursor: pointer;
 }
 
 
