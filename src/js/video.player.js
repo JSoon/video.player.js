@@ -118,6 +118,8 @@ var videoPlayer = function (params) {
         stickerAd: null,
         // 暂停广告
         pauseAd: null,
+        // 滚屏广告
+        marqueeAd: null,
         // 弹幕开关状态
         barrageStat: false,
         // 视频是否暂停
@@ -135,6 +137,20 @@ var videoPlayer = function (params) {
             }
         }
     };
+
+    /**
+     * 控件层级关系，用于控件样式的层级定义
+     * 弹幕 < 广告
+     */
+    var Z_INDEX = {
+        barrage: 9000, // 弹幕
+        stickerAd: 9001, // 贴片广告（视频区域四个角落）
+        pauseAd: 9002, // 暂停广告（视频区域正中间）
+        marqueeAd: 9003 // 滚屏广告
+    };
+
+    // ckplayer底部操作栏高度
+    var CTRL_HEIGHT = 46;
 
     // 将CKP指向window.CKP构造函数
     var CKP = window.CKP;
@@ -875,6 +891,25 @@ var videoPlayer = function (params) {
         });
     }
 
+    that.setFullPage = setFullPage;
+    /**
+     * 设置视频播放器网页全屏
+     */
+    function setFullPage() {
+        setVideoWH('100%', '100%');
+        var playerWrapper = $('#' + that.player.domId); // 播放器区域
+        // 设置网页全屏样式
+        playerWrapper.css({
+            position: 'fixed',
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            width: '100%',
+            height: '100%'
+        });
+    }
+
     that.stickerAdLoad = stickerAdLoad;
     /**
      * 添加贴片广告
@@ -889,7 +924,7 @@ var videoPlayer = function (params) {
             error('贴片广告已经存在，请勿重复添加');
         }
 
-        sticker = $('<div class="sticker-ad-container">\
+        sticker = $('<div class="video-player-sticker-ad-container">\
             <a class="sticker-ad" href="' + url + '" target="_blank">\
                 <img src="' + sticker + '" alt="贴片广告" />\
             </a>\
@@ -903,6 +938,7 @@ var videoPlayer = function (params) {
         var stickerImgHeight = 60; // 广告图片高度
         var stickerImgOffset = 40; // 底部控制栏偏移量
         var stickerStyles = position || {
+            zIndex: Z_INDEX.stickerAd,
             position: 'absolute',
             left: 10,
             bottom: 15 + stickerImgOffset,
@@ -977,7 +1013,7 @@ var videoPlayer = function (params) {
             error('暂停广告已经存在，请勿重复添加');
         }
 
-        var pause = $('<div class="pause-ad-container">\
+        var pause = $('<div class="video-player-pause-ad-container">\
             <a class="pause-ad" href="' + url + '" target="_blank">\
                 <img src="' + sticker + '" alt="暂停广告" />\
             </a>\
@@ -991,6 +1027,7 @@ var videoPlayer = function (params) {
         var pauseImgHeight = 150; // 广告图片高度
         var pauseImgOffset = 40; // 底部控制栏偏移量
         var pauseStyles = position || {
+            zIndex: Z_INDEX.pauseAd,
             position: 'absolute',
             left: '50%',
             top: '50%',
@@ -1044,12 +1081,122 @@ var videoPlayer = function (params) {
 
     that.pauseAdClose = pauseAdClose;
     /**
-     * 关闭贴片广告
+     * 关闭暂停广告
      */
     function pauseAdClose() {
         if (PRIVATE.pauseAd) {
             PRIVATE.pauseAd.remove();
             PRIVATE.pauseAd = null;
+        }
+    }
+
+    that.marqueeAdLoad = marqueeAdLoad;
+    /**
+     * 添加滚屏广告
+     * 
+     * @param {string} marquee  滚屏广告html结构
+     * @param {string} position 滚屏广告位置：top/bottom
+     * @param {number} repeat   重复滚动显示次数
+     */
+    function marqueeAdLoad(marquee, position, repeat) {
+        if (PRIVATE.marqueeAd) {
+            error('滚屏广告已经存在，请勿重复添加');
+        }
+
+        marquee = $('<div class="video-player-marquee-container">\
+            <div class="video-player-marquee-item">' + marquee + '</div>\
+            <i class="close">关闭</i>\
+            </div>');
+        var marqueeItem = marquee.children('.video-player-marquee-item'); // 广告文字
+        var marqueeClose = marquee.children('.close'); // 广告关闭按钮
+        var marqueeFontSize = 12;
+        var marqueeStyles = {
+            zIndex: Z_INDEX.marqueeAd,
+            position: 'absolute',
+            left: '20px',
+            right: '20px',
+            height: marqueeFontSize + 10,
+            padding: '5px',
+            overflow: 'hidden',
+            color: '#fff',
+            fontSize: marqueeFontSize,
+            backgroundColor: 'rgba(0,0,0,.5)'
+        };
+        var marqueeItemStyles = {
+            position: 'absolute',
+            left: '100%',
+            lineHeight: 1,
+            whiteSpace: 'nowrap'
+        };
+        var marqueeCloseStyles = {
+            position: 'absolute',
+            top: '1px',
+            right: 0,
+            display: 'inline-block',
+            padding: '1px 5px',
+            cursor: 'pointer',
+            fontSize: '12px',
+            fontStyle: 'normal',
+            fontWeight: 'bold'
+        };
+        marquee.css(marqueeStyles);
+        marqueeItem.css(marqueeItemStyles);
+        marqueeClose.css(marqueeCloseStyles);
+        switch (position) {
+            case 'top':
+                marquee.css('top', 10);
+                break;
+            default: // 默认定位在底部
+                marquee.css('bottom', CTRL_HEIGHT + 10);
+                break;
+        }
+
+        $('#' + that.player.domId).append(marquee); // 添加滚屏广告到html中
+
+        // 重复滚动显示次数，滚动完毕后，自动关闭
+        repeat = repeat || 3;
+        var repeatMark = 0; // 重复次数记录
+        // 给滚屏广告添加动画
+        marqueeItemAnimation();
+
+        function marqueeItemAnimation() {
+            marqueeItem.animate({
+                left: -marqueeItem.width()
+            }, {
+                duration: 10000,
+                easing: 'linear',
+                complete: function () {
+                    marqueeItem.css('left', '100%'); // 还原滚屏广告到初始位置
+                    repeatMark += 1;
+                    // 小于滚动显示次数，才重新开始动画
+                    if (repeatMark < repeat) {
+                        marqueeItemAnimation(); // 重新开始动画
+                    }
+                    // 大于滚动显示次数，则关闭滚动广告
+                    else {
+                        marqueeAdClose();
+                    }
+                }
+            });
+        }
+
+        // 保存滚屏广告对象
+        PRIVATE.marqueeAd = marquee;
+
+        // 点击关闭按钮，关闭滚屏广告
+        marqueeClose.one('click', function () {
+            marqueeAdClose();
+        });
+    }
+
+    that.marqueeAdClose = marqueeAdClose;
+    /**
+     * 关闭滚屏广告
+     */
+    function marqueeAdClose() {
+        if (PRIVATE.marqueeAd) {
+            PRIVATE.marqueeAd.remove();
+            PRIVATE.marqueeAd = null;
         }
     }
 
@@ -1071,13 +1218,25 @@ var videoPlayer = function (params) {
         var playerWrapper = $('#' + that.player.domId); // 播放器区域
         var barrageWrapper = $('#' + PRIVATE.barrage.container); // 弹幕区域
         if ($('#' + PRIVATE.barrage.container).length === 0) {
-            barrageWrapper = $('<div id="' + PRIVATE.barrage.container + '" class="video-player-barrage-wrapper"></div>'); // 弹幕区域
+            barrageWrapper = $('<div id="' + PRIVATE.barrage.container + '" class="video-player-barrage-container"></div>'); // 弹幕区域
             // 给弹幕区域绑定点击事件，用于切换播放/暂停
             barrageWrapper.on('click', function () {
                 videoPlayOrPause();
             });
         }
         playerWrapper.append(barrageWrapper); // 添加弹幕区域到播放器区域
+        // 设置弹幕区域样式
+        barrageWrapper.css({
+            zIndex: Z_INDEX.barrage,
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            // 留出底部操作栏的高度
+            bottom: CTRL_HEIGHT,
+            left: 0,
+            overflow: 'hidden',
+            cursor: 'pointer'
+        });
         var barrage = $('<div class="video-player-barrage-item"></div>'); // 单条弹幕
         var barrageStyle = {}; // 弹幕样式
         var barrageAnimate = {}; // 弹幕动画

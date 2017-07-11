@@ -4,6 +4,7 @@
 <head>
     <title></title>
     <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <link rel="stylesheet" type="text/css" href="/css/video.player.css">
@@ -28,7 +29,7 @@
         </div>
     </div>
 
-    <button id="NewWindow">打开新窗口</button>
+    <!--<button id="NewWindow">打开新窗口</button>-->
 
     <script src="/js/jquery.js"></script>
     <script src="/ckplayer6.8/ckplayer/ckplayer.js"></script>
@@ -40,8 +41,8 @@
 
     <script>
         $('#NewWindow').click(function () {
-            window.open('http://www.baidu.com', 'newwindow',
-                'toolbar=no, menubar=no, scrollbars=no'
+            window.open('https://www.bilibili.com/video/av11804919/', 'newwindow',
+                'toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, status=no'
             );
         });
     </script>

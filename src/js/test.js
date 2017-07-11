@@ -188,6 +188,7 @@ $('#J_PlayReplay').click(function () {
 // 生成播放器控制工具栏
 function initControlBar(myVideoPlayer) {
     var screenBtn = $('<button type="button" id="J_ScreenMode">正常/影院模式切换</button>');
+    var fullPageBtn = $('<button type="button" id="J_FullPageMode">网页全屏</button>');
     var reloadBtn = $('<button type="button" id="J_Reload">重载视频</button>');
     var destroyBtn = $('<button type="button" id="J_Destroy">清除视频</button>');
 
@@ -216,6 +217,8 @@ function initControlBar(myVideoPlayer) {
         .append(barrageClearBtn)
         .append('<br>')
         .append(screenBtn)
+        .append(fullPageBtn)
+        .append('<br>')
         .append(reloadBtn)
         .append(destroyBtn)
         .append(controlOpenBtn)
@@ -252,10 +255,25 @@ function initControlBar(myVideoPlayer) {
         var playerDom = $(myVideoPlayer.player.o);
         playerDom.toggleClass('theater');
         if (playerDom.hasClass('theater')) {
+            video.css({
+                width: 1200,
+                height: 600
+            });
             myVideoPlayer.setVideoWH(1200, 600);
         } else {
+            video.css({
+                width: 600,
+                height: 400
+            });
             myVideoPlayer.setVideoWH(600, 400);
         }
+    });
+
+    /**
+     * 网页全屏
+     */
+    fullPageBtn.on('click', function () {
+        myVideoPlayer.setFullPage();
     });
 
     /**
@@ -272,10 +290,10 @@ function initControlBar(myVideoPlayer) {
      * 滚动文字广告
      */
     marqueeOpenBtn.on('click', function () {
-        myVideoPlayer.marqueeLoad('滚动文字广告展示');
+        myVideoPlayer.marqueeAdLoad('滚动文字广告展示')
     });
     marqueeCloseBtn.on('click', function () {
-        myVideoPlayer.marqueeClose();
+        myVideoPlayer.marqueeAdClose();
     });
 
     /**
@@ -301,42 +319,74 @@ function initControlBar(myVideoPlayer) {
     /**
      * 发送弹幕
      */
-    var lastFx;
+    var lastFxArray = []; // 过去几次弹幕位置（最大记录次数为弹幕行数）
+    var barrageMax = 12; // 弹幕最大行数
+    /**
+     * 检测当前弹幕位置是否和过去几次弹幕位置重复
+     * 
+     * @param  {number}  fx            当前弹幕位置 
+     * @param  {array}   lastFxArray   过去几次弹幕位置数组
+     * @return {boolean}               true / false
+     */
+    function checkRepeat(fx, lastFxArray) {
+        var repeat = false;
+        for (var j = 0; j < lastFxArray.length; j++) {
+            if (fx === lastFxArray[j]) {
+                repeat = true;
+            }
+        }
+        return repeat;
+    }
     barrageInput.on('keyup', function (e) {
         // 点击回车，发送弹幕
+        // 且需要保证每次发的弹幕位置都与前几次位置不重叠，直到弹幕达到最大行数
         if (e.which == 13) {
 
-            // for (var i = 0; i < 12; i++) {
+            for (var i = 0; i < barrageMax; i++) {
+                var text = $(this).val(); // 弹幕文本
+                var fx = randomBarragePosition(); // 弹幕在y轴上的位置
 
-            var text = $(this).val(); // 弹幕文本
-            var fx = randomBarragePosition(); // 弹幕在y轴上的位置
-            while (fx === lastFx) {
-                fx = randomBarragePosition();
-            }
-            lastFx = fx;
-            // console.log(fx);
-            var duration = randomUniform(30, 60); // 弹幕飘过屏幕动画时间
-
-            myVideoPlayer.barrageAdd({
-                html: text,
-                top: fx,
-                duration: 20000,
-                fontStyle: {
-                    fontSize: 24
+                // 过去几次弹幕数量达到了最大弹幕行数，则清空该数组，重新进行计数
+                if (lastFxArray.length === barrageMax) {
+                    lastFxArray = [];
                 }
-            });
 
-            // myVideoPlayer.textBoxShow({
-            //     // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
-            //     coor: '2,0,0,' + fx, //坐标
-            //     text: '{font color="#000" size="20" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
-            //     bgAlpha: 0, //背景透明度
-            //     tween: [
-            //         ['x', 0, -2000, duration]
-            //     ]
-            // });
+                if (lastFxArray.length > 0) {
+                    var isRepeat = checkRepeat(fx, lastFxArray);
 
-            // }
+                    while (isRepeat) {
+                        fx = randomBarragePosition();
+                        isRepeat = checkRepeat(fx, lastFxArray);
+                    }
+                }
+
+                lastFxArray.push(fx);
+
+                // console.log(i, ':', fx, 'length:', lastFxArray.length);
+
+                var duration = randomUniform(10000, 30000); // 弹幕飘过屏幕动画时间
+
+                myVideoPlayer.barrageAdd({
+                    html: text,
+                    top: fx,
+                    duration: duration,
+                    fontStyle: {
+                        fontSize: 24,
+                        color: '#fff'
+                    }
+                });
+
+                // myVideoPlayer.textBoxShow({
+                //     // name: 'textboxname_' + Math.random(), //该文本元件的名称，主要作用是关闭时需要用到
+                //     coor: '2,0,0,' + fx, //坐标
+                //     text: '{font color="#000" size="20" face="Microsoft YaHei,微软雅黑"}' + text + '{/font}',
+                //     bgAlpha: 0, //背景透明度
+                //     tween: [
+                //         ['x', 0, -2000, duration]
+                //     ]
+                // });
+
+            }
 
         }
     });
